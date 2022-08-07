@@ -16,6 +16,7 @@
 
 #define NAME_MAXLEN 6
 #define PATH_MAXLEN 1999
+#define MAX 70000
 
 #define CMD_MKDIR 1
 #define CMD_RM 2
@@ -23,265 +24,344 @@
 #define CMD_MV 4
 #define CMD_FIND 5
 
-#define NAME_MAXLEN 6
-#define PATH_MAXLEN 1999
-
 using namespace std;
 
 struct Node {
-	string cur;
-	vector<Node*> v;
+	char name[NAME_MAXLEN + 1];
+	Node* child[30];
 };
+Node nodes[MAX];
+Node* root;
+int nodeCnt;
 
-class tree {
-public:
-	Node* root;
-};
-tree tr;
+Node* newNode(char name[NAME_MAXLEN + 1]) {
+	for (int i = 0; name[i] != NULL; i++) {
+		nodes[nodeCnt].name[i] = name[i];
+	}
+	for (int i = 0; i < 30; i++) {
+		nodes[nodeCnt].child[i] = nullptr;
+	}
+	return &nodes[nodeCnt++];
+}
 
 void clean(Node* node) {
-	if (node->v.empty() == false) {
-		for (int i = 0; i < node->v.size(); i++) {
-			clean(node->v[i]);
+	if (node->child[0] == nullptr) {
+		for (int i = 0; node->child[i] != nullptr; i++) {
+			node->child[i] = nullptr;
 		}
 	}
-	for (int i = 0; i < node->v.size(); i++) {
-		delete node->v[i];
-	}
-	node->v.clear();
 }
 
 void init(int n) {
-	clean(tr.root);
-}
-
-void cmd_mkdir(string s1, string s2) {
-	if (s1 == "/") {
-		Node* temp = new Node();
-		temp->cur = s2;
-		tr.root->v.push_back(temp);
-	}
-	else {
-		string temp = "";
-		s1.erase(0, 0);
-		Node* tmp = tr.root;
-		while (!s1.empty()) {
-			while (s1[0] != '/') {
-				temp + s1[0];
-				s1.erase(0, 0);
-			}
-			s1.erase(0, 0);
-			for (int i = 0; i < tmp->v.size(); i++) {
-				if (tmp->v[i]->cur == temp) {
-					tmp = tmp->v[i];
-					break;
-				}
-			}
-			temp = "";
-		}
-		Node* temp2 = new Node();
-		temp2->cur = s2;
-		tmp->v.push_back(temp2);
-	}
+	nodeCnt = 0;
+	root = newNode("/");
 }
 
 int count(Node* node) {
-	int cnt = 0;
-	if (node->v.empty() == false) {
-		for (int i = 0; i < node->v.size(); i++) {
-			cnt += count(node->v[i]);
-		}
-	}
-	for (int i = 0; i < node->v.size(); i++) {
-		cnt++;
+	int cnt = 1;
+	for (int i = 0; node->child[i] != nullptr; i++) {
+		cout << node->name << "   " << node->child[i]->name << '\n';
+		cnt += count(node->child[i]);
 	}
 	return cnt;
 }
 
-Node* newNode(string s) {
-	Node* tmp = new Node();
-	tmp->cur = s;
-	return tmp;
-}
-
-Node* getCopiedTree(Node* src) {
-	Node* tmp = newNode(src->cur);
-	for (int i = 0; i < src->v.size(); i++) {
-		tmp->v.push_back(getCopiedTree(src->v[i]));
-	}
-	return tmp;
-}
-
-void cmd_rm(string s) {
-	string temp = "";
-	s.erase(0, 0);
-	Node* tmp = tr.root;
-	Node* prev = nullptr;
-	int i = 0;
-	while (!s.empty()) {
-		while (s[0] != '/') {
-			temp + s[0];
-			s.erase(0, 0);
-		}
-		s.erase(0, 0);
-		for (i = 0; i < tmp->v.size(); i++) {
-			if (tmp->v[i]->cur == temp) {
-				prev = tmp;
-				tmp = tmp->v[i];
-				break;
-			}
-		}
-		temp = "";
-	}
-	clean(tmp);
-	if (prev != nullptr) {
-		prev->v.erase(prev->v.begin() + i);
-	}
-	delete tmp;
-}
-
-void cmd_cp(string src, string dest) {
-	string temp = "";
-	src.erase(0, 0);
-	Node* tmp = tr.root;
-	while (!src.empty()) {
-		while (src[0] != '/') {
-			temp + src[0];
-			src.erase(0, 0);
-		}
-		src.erase(0, 0);
-		for (int i = 0; i < tmp->v.size(); i++) {
-			if (tmp->v[i]->cur == temp) {
-				tmp = tmp->v[i];
-				break;
-			}
-		}
-		temp = "";
-	}
-	string temp2 = "";
-	dest.erase(0, 0);
-	Node* tmp2 = tr.root;
-	while (!dest.empty()) {
-		while (dest[0] != '/') {
-			temp2 + dest[0];
-			dest.erase(0, 0);
-		}
-		dest.erase(0, 0);
-		for (int i = 0; i < tmp2->v.size(); i++) {
-			if (tmp2->v[i]->cur == temp2) {
-				tmp2 = tmp2->v[i];
-				break;
-			}
-		}
-		temp2 = "";
-	}
-	tmp2->v.push_back(getCopiedTree(tmp));
-}
-
-void cmd_mv(string src, string dest) {
-	string temp = "";
-	src.erase(0, 0);
-	Node* tmp = tr.root;
-	Node* prev = nullptr;
-	int i = 0;
-	while (!src.empty()) {
-		while (src[0] != '/') {
-			temp + src[0];
-			src.erase(0, 0);
-		}
-		src.erase(0, 0);
-		for (i = 0; i < tmp->v.size(); i++) {
-			if (tmp->v[i]->cur == temp) {
-				prev = tmp;
-				tmp = tmp->v[i];
-				break;
-			}
-		}
-		temp = "";
-	}
-	string temp2 = "";
-	dest.erase(0, 0);
-	Node* tmp2 = tr.root;
-	while (!dest.empty()) {
-		while (dest[0] != '/') {
-			temp2 + dest[0];
-			dest.erase(0, 0);
-		}
-		dest.erase(0, 0);
-		for (int j = 0; j < tmp2->v.size(); j++) {
-			if (tmp2->v[j]->cur == temp2) {
-				tmp2 = tmp2->v[j];
-				break;
-			}
-		}
-		temp2 = "";
-	}
-	tmp2->v.push_back(getCopiedTree(tmp));
-	clean(tmp);
-	if (prev != nullptr) {
-		prev->v.erase(prev->v.begin() + i);
-	}
-	delete tmp;
-}
-
-int cmd_find(string s) {
-	if (s == "/") {
-		return count(tr.root);
+int cmd_find(char path[PATH_MAXLEN + 1]) {
+	cout << '\n';
+	if (!strcmp(path, "/")) {
+		return count(root);
 	}
 	else {
-		string temp = "";
-		s.erase(0, 0);
-		Node* tmp = tr.root;
-		while (!s.empty()) {
-			while (s[0] != '/') {
-				temp + s[0];
-				s.erase(0, 0);
-			}
-			s.erase(0, 0);
-			for (int i = 0; i < tmp->v.size(); i++) {
-				if (tmp->v[i]->cur == temp) {
-					tmp = tmp->v[i];
-					break;
+		Node* tmp = root;
+		int nameIdx = 0;
+		char temp[NAME_MAXLEN + 1] = "";
+		for (int i = 1; path[i] != NULL; i++) {
+			if (path[i] == '/') {
+				nameIdx = i;
+				for (int j = 0; j < 30; j++) {
+					if (!strcmp(tmp->child[j]->name, temp)) {
+						tmp = tmp->child[j];
+						break;
+					}
+				}
+				for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+					temp[j] = NULL;
 				}
 			}
-			temp = "";
+			else {
+				temp[i - 1 - nameIdx] = path[i];
+			}
 		}
 		return count(tmp);
 	}
+}
+
+void cmd_mkdir(char path[PATH_MAXLEN + 1], char name[NAME_MAXLEN + 1]) {
+	cout << '\n' << "1 mkdir" << '\n';
+	if (!strcmp(path, "/")) {
+		Node* temp = newNode(name);
+
+		for (int i = 0; i < 30; i++) {
+			if (root->child[i] == nullptr) {
+				root->child[i] = temp;
+				cout << root->name << "++" << temp->name << '\n';
+				break;
+			}
+		}
+	}
+	else {
+		Node* tmp = root;
+		int nameIdx = 0;
+		char temp[NAME_MAXLEN + 1] = "";
+		for (int i = 1; path[i] != NULL; i++) {
+			if (path[i] == '/') {
+				nameIdx = i;
+				for (int j = 0; j < 30; j++) {
+					if (!strcmp(tmp->child[j]->name, temp)) {
+						tmp = tmp->child[j];
+						break;
+					}
+				}
+				for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+					temp[j] = NULL;
+				}
+			}
+			else {
+				temp[i - 1 - nameIdx] = path[i];
+			}
+		}
+		Node* temp2 = newNode(name);
+		for (int i = 0; i < 30; i++) {
+			if (tmp->child[i] == nullptr) {
+				tmp->child[i] = temp2;
+				cout << tmp->name << "/++" << temp2->name << '\n';
+				break;
+			}
+		}
+	}
+	cmd_find("/");
+}
+
+//Node* getCopiedTree(Node* src) {
+//	Node* tmp = newNode(src->name);
+//	for (int i = 0; src->child[i] != nullptr; i++) {
+//		tmp->child[i] = getCopiedTree(src->child[i]);
+//	}
+//	return tmp;
+//}
+
+void cmd_rm(char path[PATH_MAXLEN + 1]) {
+	cout << '\n' << "2 rm" << '\n';
+	Node* tmp = root;
+	Node* prev = nullptr;
+	int nameIdx = 0;
+	int j = 0;
+	char temp[NAME_MAXLEN + 1] = "";
+	for (int i = 1; path[i] != NULL; i++) {
+		if (path[i] == '/') {
+			nameIdx = i;
+			for (j = 0; j < 30; j++) {
+				if (!strcmp(tmp->child[j]->name, temp)) {
+					prev = tmp;
+					tmp = tmp->child[j];
+					break;
+				}
+			}
+			for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+				temp[j] = NULL;
+			}
+		}
+		else {
+			temp[i - 1 - nameIdx] = path[i];
+		}
+	}
+	if (prev != nullptr) {
+		prev->child[j] = nullptr;
+		for (int k = j + 1; prev->child[k] != nullptr; k++) {
+			if (prev->child[k + 1] == nullptr || k == 28) {
+				prev->child[k - 1] = prev->child[k];
+				prev->child[k] = nullptr;
+			}
+			else {
+				prev->child[k - 1] = prev->child[k];
+			}
+		}
+	}
+	cmd_find("/");
+}
+
+void cmd_cp(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
+	cout << '\n' << "3 cp" << '\n';
+	Node* tmp = root;
+	char temp[NAME_MAXLEN + 1] = "";
+	char temp2[NAME_MAXLEN + 1] = "";
+	int nameIdx = 0;
+	for (int i = 1; srcPath[i] != NULL; i++) {
+		if (srcPath[i] == '/') {
+			nameIdx = i;
+			for (int j = 0; j < 30; j++) {
+				if (!strcmp(tmp->child[j]->name, temp)) {
+					tmp = tmp->child[j];
+					break;
+				}
+			}
+			for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+				temp[j] = NULL;
+			}
+		}
+		else {
+			temp[i - 1 - nameIdx] = srcPath[i];
+		}
+	}
+	nameIdx = 0;
+	Node* tmp2 = root;
+	if (!strcmp(dstPath, "/")) {
+		for (int i = 0; i < 30; i++) {
+			if (tmp2->child[i] == nullptr) {
+				tmp2->child[i] = tmp;
+				break;
+			}
+		}
+	}
+	else {
+		for (int i = 1; dstPath[i] != NULL; i++) {
+			if (dstPath[i] == '/') {
+				nameIdx = i;
+				for (int j = 0; j < 30; j++) {
+					if (!strcmp(tmp2->child[j]->name, temp2)) {
+						tmp2 = tmp2->child[j];
+						break;
+					}
+				}
+				for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+					temp2[j] = NULL;
+				}
+			}
+			else {
+				temp2[i - 1 - nameIdx] = dstPath[i];
+			}
+		}
+		for (int i = 0; i < 30; i++) {
+			if (tmp2->child[i] == nullptr) {
+				tmp2->child[i] = tmp;
+				break;
+			}
+		}
+	}
+	cmd_find("/");
+}
+
+void cmd_mv(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
+	cout << '\n' << "4 mv" << '\n';
+	Node* tmp = root;
+	Node* prev = nullptr;
+	char temp[NAME_MAXLEN + 1] = "";
+	char temp2[NAME_MAXLEN + 1] = "";
+	int nameIdx = 0;
+	int j = 0;
+	for (int i = 1; srcPath[i] != NULL; i++) {
+		if (srcPath[i] == '/') {
+			nameIdx = i;
+			for (j = 0; j < 30; j++) {
+				if (!strcmp(tmp->child[j]->name, temp)) {
+					prev = tmp;
+					cout << "prev is " << prev->name << j << '\n';
+					tmp = tmp->child[j];
+					cout << "cur is " << tmp->name << '\n';
+					break;
+				}
+			}
+			for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+				temp[j] = NULL;
+			}
+		}
+		else {
+			temp[i - 1 - nameIdx] = srcPath[i];
+		}
+	}
+	prev->child[j] = nullptr;
+	for (int k = j + 1; prev->child[k] != nullptr; k++) {
+		if (prev->child[k + 1] == nullptr || k == 28) {
+			prev->child[k - 1] = prev->child[k];
+			prev->child[k] = nullptr;
+		}
+		else {
+			prev->child[k - 1] = prev->child[k];
+		}
+	}
+	Node* tmp2 = root;
+	nameIdx = 0;
+	if (!strcmp(dstPath, "/")) {
+		for (int i = 0; i < 30; i++) {
+			if (tmp2->child[i] == nullptr) {
+				tmp2->child[i] = tmp;
+				cout << tmp2->name << "/++" << tmp->name << '\n';
+				break;
+			}
+		}
+	}
+	else {
+		for (int i = 1; dstPath[i] != NULL; i++) {
+			if (dstPath[i] == '/') {
+				nameIdx = i;
+				for (int j = 0; j < 30; j++) {
+					if (!strcmp(tmp2->child[j]->name, temp2)) {
+						tmp2 = tmp2->child[j];
+						cout << "desPath cur is " << tmp2->name << '\n';
+						break;
+					}
+				}
+				for (int j = 0; j < NAME_MAXLEN + 1; j++) {
+					temp2[j] = NULL;
+				}
+			}
+			else {
+				temp2[i - 1 - nameIdx] = dstPath[i];
+			}
+		}
+		for (int i = 0; i < 30; i++) {
+			if (tmp2->child[i] == nullptr) {
+				tmp2->child[i] = tmp;
+				cout << tmp2->name << "/++" << tmp->name << '\n';
+				break;
+			}
+		}
+	}	
+	cmd_find("/");
 }
 
 static bool run(int m) {
 
 	bool isAccepted = true;
 	int cmd;
-	string name;
-	string path1, path2;
+	char name[NAME_MAXLEN + 1];
+	char path1[PATH_MAXLEN + 1], path2[PATH_MAXLEN + 1];
 
 	while (m--) {
 
 		scanf("%d", &cmd);
 
 		if (cmd == CMD_MKDIR) {
-			cin >> path1 >> name;
+			scanf("%s%s", path1, name);
 			cmd_mkdir(path1, name);
 		}
 		else if (cmd == CMD_RM) {
-			cin >> path1;
+			scanf("%s", path1);
 			cmd_rm(path1);
 		}
 		else if (cmd == CMD_CP) {
-			cin >> path1 >> path2;
+			scanf("%s%s", path1, path2);
 			cmd_cp(path1, path2);
 		}
 		else if (cmd == CMD_MV) {
-			cin >> path1 >> path2;
+			scanf("%s%s", path1, path2);
 			cmd_mv(path1, path2);
 		}
 		else {
 			int ret;
 			int answer;
 
-			cin >> path1;
+			scanf("%s", path1);
 			ret = cmd_find(path1);
 			scanf("%d", &answer);
 
