@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <stdio.h>
 #include <cmath>
-#include <string>
 #include <array>
 
 #define NAME_MAXLEN 6
@@ -33,7 +32,6 @@ struct Node {
 Node nodes[MAX];
 Node* root;
 int nodeCnt;
-int nodeSum = 1;
 
 Node* newNode(char name[NAME_MAXLEN + 1]) {
 	for (int i = 0; i < NAME_MAXLEN + 1; i++) {
@@ -53,23 +51,18 @@ Node* newNode(char name[NAME_MAXLEN + 1]) {
 void init(int n) {
 	nodeCnt = 0;
 	root = newNode("/");
-	nodeSum = 1;
 }
 
 int count(Node* node) {
 	int cnt = 1;
-	//cout << node->name << " ";
 	for (int i = 0; node->child[i] != nullptr; i++) {
 		cnt += count(node->child[i]);
 	}
-	//cout << '\n';
 	return cnt;
 }
 
 int cmd_find(char path[PATH_MAXLEN + 1]) {
-	cout << "5 find " << path << '\n';
 	if (!strcmp(path, "/")) {
-		//cout << count(root) - 1;
 		return count(root)-1;
 	}
 	else {
@@ -93,24 +86,17 @@ int cmd_find(char path[PATH_MAXLEN + 1]) {
 				temp[i - 1 - nameIdx] = path[i];
 			}
 		}
-		//cout << count(tmp) - 1;
 		return count(tmp)-1;
 	}
 }
 
 void cmd_mkdir(char path[PATH_MAXLEN + 1], char name[NAME_MAXLEN + 1]) {
-	cout << '\n' << "1 mkdir" << '\n';
-	int called = 0;
 	if (!strcmp(path, "/")) {
 		Node* temp = newNode(name);
 
 		for (int i = 0; i < 30; i++) {
 			if (root->child[i] == nullptr) {
 				root->child[i] = temp;
-				called++;
-				cout << called << '\n';
-				nodeSum++;
-				//cout << root->name << "   " << temp->name << '\n';
 				break;
 			}
 		}
@@ -136,33 +122,25 @@ void cmd_mkdir(char path[PATH_MAXLEN + 1], char name[NAME_MAXLEN + 1]) {
 				temp[i - 1 - nameIdx] = path[i];
 			}
 		}
-		//cout << name << '\n';
-		nodeSum++;
 		Node* temp2 = newNode(name);
-		//cout << temp2->name << '\n';
 		for (int i = 0; i < 30; i++) {
 			if (tmp->child[i] == nullptr) {
-				called++;
-				cout << called << '\n';
 				tmp->child[i] = temp2;
 				break;
 			}
 		}
-		cout << nodeSum << '\n';
-		cout << count(root) << '\n';
 	}
 }
 
-//Node* getCopiedTree(Node* src) {
-//	Node* tmp = newNode(src->name);
-//	for (int i = 0; src->child[i] != nullptr; i++) {
-//		tmp->child[i] = getCopiedTree(src->child[i]);
-//	}
-//	return tmp;
-//}
+Node* getCopiedTree(Node* src) {
+	Node* tmp = newNode(src->name);
+	for (int i = 0; src->child[i] != nullptr; i++) {
+		tmp->child[i] = getCopiedTree(src->child[i]);
+	}
+	return tmp;
+}
 
 void cmd_rm(char path[PATH_MAXLEN + 1]) {
-	cout << '\n' << "2 rm" << '\n';
 	Node* tmp = root;
 	Node* prev = nullptr;
 	int nameIdx = 0;
@@ -199,13 +177,9 @@ void cmd_rm(char path[PATH_MAXLEN + 1]) {
 			}
 		}
 	}
-	nodeSum = nodeSum - mN;
-	cout << nodeSum << '\n';
-	cout << count(root) << '\n';
 }
 
 void cmd_cp(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
-	cout << '\n' << "3 cp" << '\n';
 	Node* tmp = root;
 	char temp[NAME_MAXLEN + 1] = "";
 	char temp2[NAME_MAXLEN + 1] = "";
@@ -233,7 +207,7 @@ void cmd_cp(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
 	if (!strcmp(dstPath, "/")) {
 		for (int i = 0; i < 30; i++) {
 			if (tmp2->child[i] == nullptr) {
-				tmp2->child[i] = tmp;
+				tmp2->child[i] = getCopiedTree(tmp);
 				break;
 			}
 		}
@@ -258,18 +232,14 @@ void cmd_cp(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
 		}
 		for (int i = 0; i < 30; i++) {
 			if (tmp2->child[i] == nullptr) {
-				tmp2->child[i] = tmp;
+				tmp2->child[i] = getCopiedTree(tmp);
 				break;
 			}
 		}
 	}
-	nodeSum = nodeSum + dN;
-	cout << nodeSum << '\n';
-	cout << count(root) << '\n';
 }
 
 void cmd_mv(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
-	cout << '\n' << "4 mv" << '\n';
 	Node* tmp = root;
 	Node* prev = nullptr;
 	char temp[NAME_MAXLEN + 1] = "";
@@ -310,7 +280,6 @@ void cmd_mv(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
 		for (int i = 0; i < 30; i++) {
 			if (tmp2->child[i] == nullptr) {
 				tmp2->child[i] = tmp;
-				//cout << tmp2->name << "/++" << tmp->name << '\n';
 				break;
 			}
 		}
@@ -336,13 +305,10 @@ void cmd_mv(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
 		for (int i = 0; i < 30; i++) {
 			if (tmp2->child[i] == nullptr) {
 				tmp2->child[i] = tmp;
-				//cout << tmp2->name << "/++" << tmp->name << '\n';
 				break;
 			}
 		}
 	}
-	cout << nodeSum << '\n';
-	cout << count(root) << '\n';
 }
 
 static bool run(int m) {
